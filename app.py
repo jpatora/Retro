@@ -32,7 +32,26 @@ ra = RAClient(RA_USERNAME, RA_API_KEY) if RA_USERNAME and RA_API_KEY else None
 
 def _require_client():
     if ra is None:
-        abort(500, description="RA client not configured. Set RA_USERNAME and RA_API_KEY in .env")
+        abort(500, description=(
+            "RA client not configured. Copy .env.example to .env in the same folder "
+            "as app.py, then restart the server."
+        ))
+
+
+@app.errorhandler(500)
+def handle_500(err):
+    msg = getattr(err, "description", None) or "Internal server error"
+    # Return JSON for /api routes so the frontend can display the real reason.
+    if request.path.startswith("/api/"):
+        return jsonify({"error": msg}), 500
+    return f"<h1>500</h1><p>{msg}</p>", 500
+
+
+@app.errorhandler(Exception)
+def handle_uncaught(err):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": f"{type(err).__name__}: {err}"}), 500
+    raise err
 
 
 # ---------------------------------------------------------------------------
