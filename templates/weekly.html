@@ -78,7 +78,7 @@ function renderWeekly(root, data) {
     } else {
         html += `<ul class="unlock-list">`;
         for (const a of data.achievements) {
-            const badge = a.BadgeURL || (a.BadgeName ? `https://media.retroachievements.org/Badge/${a.BadgeName}.png` : '');
+            const badge = badgeImageUrl(a.BadgeURL, a.BadgeName);
             const gid = a.GameID || '';
             html += `<li ${gid ? `class="clickable" data-game-id="${gid}"` : ''}>
                 ${badge ? `<img src="${badge}" alt="">` : ''}

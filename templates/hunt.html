@@ -89,7 +89,7 @@ function render(root, data) {
     } else {
         html += `<ul class="unlock-list">`;
         for (const a of data.remaining) {
-            const badge = a.badge ? `https://media.retroachievements.org/Badge/${a.badge}.png` : '';
+            const badge = badgeImageUrl(null, a.badge);
             const rarityClass = a.rarity_pct > 50 ? 'common' : 'rare';
             html += `<li>
                 ${badge ? `<img src="${badge}" style="opacity:0.55;" alt="">` : ''}
@@ -107,7 +107,7 @@ function render(root, data) {
     if (data.earned.length) {
         html += `<div class="card"><h2>Earned (${data.earned.length})</h2><ul class="unlock-list">`;
         for (const a of data.earned) {
-            const badge = a.badge ? `https://media.retroachievements.org/Badge/${a.badge}.png` : '';
+            const badge = badgeImageUrl(null, a.badge);
             html += `<li>
                 ${badge ? `<img src="${badge}" alt="">` : ''}
                 <div style="flex:1;min-width:0;">
