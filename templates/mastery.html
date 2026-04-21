@@ -23,6 +23,65 @@
 
 {% block scripts %}
 <script>
+let MASTERY_DATA = null;
+
+function render() {
+    const root = document.getElementById('mastery-root');
+    if (!MASTERY_DATA) return;
+    const data = MASTERY_DATA;
+    const softcore = isSoftcore();
+
+    if (!data.count) {
+        root.innerHTML = `<div class="card"><div class="empty">No candidates at ${data.threshold}%+ completion.</div></div>`;
+        return;
+    }
+
+    // Re-sort by the active mode's remaining count
+    const candidates = data.candidates.slice().sort((a, b) => {
+        const ar = softcore ? a.remaining : a.remaining_hardcore;
+        const br = softcore ? b.remaining : b.remaining_hardcore;
+        if (ar !== br) return ar - br;
+        return (softcore ? b.pct_soft - a.pct_soft : b.pct_hard - a.pct_hard);
+    });
+
+    const modeLabel = softcore ? 'SC' : 'HC';
+    const secondaryLabel = softcore ? 'HC' : 'SC';
+
+    let html = `<div class="card"><h2>${data.count} game${data.count === 1 ? '' : 's'} within reach <span style="font-weight:400;font-size:0.85rem;color:var(--text-muted);">— sorted by ${modeLabel.toLowerCase()} remaining</span></h2>`;
+    html += `<table><thead><tr>
+        <th></th><th>Game</th><th>Console</th>
+        <th>Progress (${modeLabel})</th>
+        <th>${secondaryLabel}</th>
+        <th>Remaining</th><th>Last Played</th>
+    </tr></thead><tbody>`;
+
+    for (const c of candidates) {
+        const icon = c.icon ? `https://retroachievements.org${c.icon}` : '';
+        const pctPrimary = softcore ? c.pct_soft : c.pct_hard;
+        const pctSecondary = softcore ? c.pct_hard : c.pct_soft;
+        const remainingPrimary = softcore ? c.remaining : c.remaining_hardcore;
+        const barClass = softcore ? '' : ' hardcore';
+
+        html += `<tr class="clickable-row" data-game-id="${c.game_id}">
+            <td>${icon ? `<img src="${icon}" alt="" style="width:40px;height:40px;border-radius:4px;">` : ''}</td>
+            <td><strong>${c.title}</strong></td>
+            <td>${c.console}</td>
+            <td>
+                ${pctPrimary}%<div class="progress"><div class="bar${barClass}" style="width:${pctPrimary}%;"></div></div>
+            </td>
+            <td>
+                ${pctSecondary}%<div class="progress"><div class="bar${softcore ? ' hardcore' : ''}" style="width:${pctSecondary}%;"></div></div>
+            </td>
+            <td><strong>${remainingPrimary}</strong> / ${c.total_achievements}</td>
+            <td>${(c.most_recent || '').slice(0,10)}</td>
+        </tr>`;
+    }
+
+    html += `</tbody></table></div>`;
+    root.innerHTML = html;
+    wireGameLinks(root);
+}
+
 async function loadMastery() {
     const root = document.getElementById('mastery-root');
     root.innerHTML = '<div class="loading">Loading…</div>';
@@ -33,47 +92,16 @@ async function loadMastery() {
             const err = await r.json().catch(() => ({error: 'HTTP ' + r.status}));
             throw new Error(err.error || ('HTTP ' + r.status));
         }
-        const data = await r.json();
-        render(root, data);
+        MASTERY_DATA = await r.json();
+        render();
     } catch (e) {
         root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
     }
 }
 
-function render(root, data) {
-    if (!data.count) {
-        root.innerHTML = `<div class="card"><div class="empty">No candidates at ${data.threshold}%+ completion.</div></div>`;
-        return;
-    }
-    let html = `<div class="card"><h2>${data.count} game${data.count === 1 ? '' : 's'} within reach</h2>`;
-    html += `<table><thead><tr>
-        <th></th><th>Game</th><th>Console</th><th>Progress (HC)</th><th>Softcore</th><th>Remaining</th><th>Last Played</th>
-    </tr></thead><tbody>`;
-
-    for (const c of data.candidates) {
-        const icon = c.icon ? `https://retroachievements.org${c.icon}` : '';
-        html += `<tr class="clickable-row" data-game-id="${c.game_id}">
-            <td>${icon ? `<img src="${icon}" alt="" style="width:40px;height:40px;border-radius:4px;">` : ''}</td>
-            <td><strong>${c.title}</strong></td>
-            <td>${c.console}</td>
-            <td>
-                ${c.pct_hard}%<div class="progress"><div class="bar hardcore" style="width:${c.pct_hard}%;"></div></div>
-            </td>
-            <td>
-                ${c.pct_soft}%<div class="progress"><div class="bar" style="width:${c.pct_soft}%;"></div></div>
-            </td>
-            <td><strong>${c.remaining}</strong> / ${c.total_achievements}</td>
-            <td>${(c.most_recent || '').slice(0,10)}</td>
-        </tr>`;
-    }
-
-    html += `</tbody></table></div>`;
-    root.innerHTML = html;
-    wireGameLinks(root);
-}
-
 document.getElementById('threshold').addEventListener('change', loadMastery);
 document.getElementById('refresh').addEventListener('click', loadMastery);
+window.addEventListener('progressmodechange', render);
 loadMastery();
 </script>
 {% endblock %}

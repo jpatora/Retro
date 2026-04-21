@@ -74,6 +74,51 @@ body {
 .site-nav a:hover { background: var(--steel); color: #fff; }
 .site-nav a.active { background: var(--steel); color: #fff; font-weight: 500; }
 
+/* ---------- Progress mode toggle ---------- */
+.mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.82rem;
+    color: #d5dcec;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.15s;
+}
+.mode-toggle:hover { background: rgba(255,255,255,0.14); }
+.mode-toggle input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 32px;
+    height: 18px;
+    background: #6b7a95;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin: 0;
+}
+.mode-toggle input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.mode-toggle input[type="checkbox"]:checked { background: var(--accent); }
+.mode-toggle input[type="checkbox"]:checked::before { transform: translateX(14px); }
+.mode-toggle .slider { display: none; }
+#progress-mode-label { font-weight: 500; min-width: 52px; text-align: right; }
+
 /* ---------- Layout ---------- */
 .site-main {
     max-width: 1280px;

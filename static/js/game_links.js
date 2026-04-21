@@ -1,4 +1,53 @@
 /**
+ * Global "hardcore vs softcore" display preference.
+ * Stored in localStorage as 'ra_progress_mode' = 'softcore' | 'hardcore'.
+ * Softcore is the default.
+ */
+const PROGRESS_MODE_KEY = 'ra_progress_mode';
+
+function getProgressMode() {
+    try {
+        return localStorage.getItem(PROGRESS_MODE_KEY) || 'softcore';
+    } catch {
+        return 'softcore';
+    }
+}
+
+function setProgressMode(mode) {
+    try {
+        localStorage.setItem(PROGRESS_MODE_KEY, mode);
+    } catch {}
+    // Notify any listeners on this page
+    window.dispatchEvent(new CustomEvent('progressmodechange', {detail: {mode}}));
+}
+
+function isSoftcore() {
+    return getProgressMode() === 'softcore';
+}
+
+window.getProgressMode = getProgressMode;
+window.setProgressMode = setProgressMode;
+window.isSoftcore = isSoftcore;
+
+// Wire up the header toggle once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('progress-mode-toggle');
+    if (!toggle) return;
+    // Reflect current state
+    toggle.checked = !isSoftcore();  // checked = hardcore
+    toggle.addEventListener('change', () => {
+        setProgressMode(toggle.checked ? 'hardcore' : 'softcore');
+    });
+    // Update label text
+    const updateLabel = () => {
+        const label = document.getElementById('progress-mode-label');
+        if (label) label.textContent = isSoftcore() ? 'Softcore' : 'Hardcore';
+    };
+    updateLabel();
+    window.addEventListener('progressmodechange', updateLabel);
+});
+
+/**
  * Build a fully-qualified badge image URL from either a BadgeURL
  * (relative path like "/Badge/12345.png") or a bare BadgeName ("12345").
  * Returns empty string if neither is provided.

@@ -1,11 +1,13 @@
 """
 Canonical list of mainline + major spin-off Pokémon titles released on
-Game Boy, Game Boy Color, and Game Boy Advance (North American releases).
+Game Boy, Game Boy Color, Game Boy Advance, and Nintendo DS (North
+American releases).
 
 RA Console IDs:
   4 = Game Boy
   6 = Game Boy Color
   5 = Game Boy Advance
+  18 = Nintendo DS
 
 Each entry carries:
   - title:        Human-friendly display name
@@ -119,6 +121,131 @@ POKEMON_TITLES = [
         "title": "Pokémon Mystery Dungeon: Red Rescue Team",
         "console_id": 5,
         "match_terms": ["pokemon", "mystery", "dungeon"],
+        "exclude_terms": [],
+    },
+
+    # ---------- Nintendo DS (console_id = 18) ----------
+    # Gen IV mainline
+    {
+        "title": "Pokémon Diamond",
+        "console_id": 18,
+        "match_terms": ["pokemon", "diamond"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Pearl",
+        "console_id": 18,
+        "match_terms": ["pokemon", "pearl"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Platinum",
+        "console_id": 18,
+        "match_terms": ["pokemon", "platinum"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon HeartGold",
+        "console_id": 18,
+        "match_terms": ["pokemon", "heartgold"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon SoulSilver",
+        "console_id": 18,
+        "match_terms": ["pokemon", "soulsilver"],
+        "exclude_terms": [],
+    },
+    # Gen V mainline
+    {
+        "title": "Pokémon Black",
+        "console_id": 18,
+        "match_terms": ["pokemon", "black"],
+        "exclude_terms": ["version 2", "black 2", "black2"],
+    },
+    {
+        "title": "Pokémon White",
+        "console_id": 18,
+        "match_terms": ["pokemon", "white"],
+        "exclude_terms": ["version 2", "white 2", "white2"],
+    },
+    {
+        "title": "Pokémon Black 2",
+        "console_id": 18,
+        "match_terms": ["pokemon", "black", "2"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon White 2",
+        "console_id": 18,
+        "match_terms": ["pokemon", "white", "2"],
+        "exclude_terms": [],
+    },
+    # DS spin-offs
+    {
+        "title": "Pokémon Mystery Dungeon: Blue Rescue Team",
+        "console_id": 18,
+        "match_terms": ["pokemon", "mystery", "dungeon", "blue"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Mystery Dungeon: Explorers of Time",
+        "console_id": 18,
+        "match_terms": ["pokemon", "explorers", "time"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Mystery Dungeon: Explorers of Darkness",
+        "console_id": 18,
+        "match_terms": ["pokemon", "explorers", "darkness"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Mystery Dungeon: Explorers of Sky",
+        "console_id": 18,
+        "match_terms": ["pokemon", "explorers", "sky"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Ranger",
+        "console_id": 18,
+        "match_terms": ["pokemon", "ranger"],
+        "exclude_terms": ["shadows", "almia", "guardian", "signs"],
+    },
+    {
+        "title": "Pokémon Ranger: Shadows of Almia",
+        "console_id": 18,
+        "match_terms": ["pokemon", "ranger", "almia"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Ranger: Guardian Signs",
+        "console_id": 18,
+        "match_terms": ["pokemon", "ranger", "guardian"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Dash",
+        "console_id": 18,
+        "match_terms": ["pokemon", "dash"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Trozei!",
+        "console_id": 18,
+        "match_terms": ["pokemon", "trozei"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Pokémon Conquest",
+        "console_id": 18,
+        "match_terms": ["pokemon", "conquest"],
+        "exclude_terms": [],
+    },
+    {
+        "title": "Learn with Pokémon: Typing Adventure",
+        "console_id": 18,
+        "match_terms": ["pokemon", "typing"],
         "exclude_terms": [],
     },
 ]

@@ -398,7 +398,9 @@ def api_mastery():
         pct_soft = 100 * earned / total
         pct_hard = 100 * earned_hc / total
 
-        # Already mastered? Skip.
+        # Skip fully-100% hardcore masteries — those aren't candidates for anything.
+        # Don't skip softcore-100% games here; if user is in hardcore mode those
+        # still show as candidates for hardcore completion.
         if pct_hard >= 100:
             continue
 
@@ -415,14 +417,16 @@ def api_mastery():
             "total_achievements": total,
             "earned": earned,
             "earned_hardcore": earned_hc,
-            "remaining": total - earned_hc,
+            "remaining": total - earned,
+            "remaining_hardcore": total - earned_hc,
             "pct_soft": round(pct_soft, 1),
             "pct_hard": round(pct_hard, 1),
             "most_recent": g.get("MostRecentAwardedDate"),
         })
 
-    # Sort by fewest remaining first (easiest to knock out)
-    candidates.sort(key=lambda c: (c["remaining"], -c["pct_hard"]))
+    # Default sort: fewest remaining (softcore) first. Frontend re-sorts
+    # based on active mode anyway.
+    candidates.sort(key=lambda c: (c["remaining"], -c["pct_soft"]))
 
     return jsonify({
         "threshold": threshold,
@@ -468,24 +472,27 @@ def api_pokemon():
     # Fetch per-console game catalogs once. These responses are large but
     # RA's in-memory cache on the client keeps this cheap on repeat calls.
     console_catalogs: dict[int, list] = {}
-    for cid in (4, 5, 6):
+    for cid in (4, 5, 6, 18):
         try:
             console_catalogs[cid] = ra.get_game_list(cid, has_achievements_only=True)
         except Exception as e:
             console_catalogs[cid] = []
             print(f"Failed to fetch game list for console {cid}: {e}")
 
-    CONSOLE_NAMES = {4: "Game Boy", 6: "Game Boy Color", 5: "Game Boy Advance"}
+    CONSOLE_NAMES = {4: "Game Boy", 6: "Game Boy Color", 5: "Game Boy Advance", 18: "Nintendo DS"}
 
     results = []
     totals = {
         "games_total": len(POKEMON_TITLES),
         "games_with_sets": 0,
         "games_played": 0,
+        "games_played_hardcore": 0,
         "games_mastered": 0,
         "achievements_earned": 0,
+        "achievements_earned_hardcore": 0,
         "achievements_available": 0,
         "points_earned": 0,
+        "points_earned_hardcore": 0,
         "points_available": 0,
     }
 
@@ -571,11 +578,15 @@ def api_pokemon():
 
                 if row["earned"] > 0:
                     totals["games_played"] += 1
+                if row["earned_hardcore"] > 0:
+                    totals["games_played_hardcore"] += 1
                 if row["mastered"]:
                     totals["games_mastered"] += 1
 
                 totals["achievements_earned"] += row["earned"]
+                totals["achievements_earned_hardcore"] += row["earned_hardcore"]
                 totals["points_earned"] += row["points_earned"]
+                totals["points_earned_hardcore"] += row["points_earned_hardcore"]
 
         results.append(row)
 
@@ -584,8 +595,16 @@ def api_pokemon():
         round(100 * totals["achievements_earned"] / totals["achievements_available"], 1)
         if totals["achievements_available"] else 0
     )
+    totals["overall_percent_hardcore"] = (
+        round(100 * totals["achievements_earned_hardcore"] / totals["achievements_available"], 1)
+        if totals["achievements_available"] else 0
+    )
     totals["overall_points_percent"] = (
         round(100 * totals["points_earned"] / totals["points_available"], 1)
+        if totals["points_available"] else 0
+    )
+    totals["overall_points_percent_hardcore"] = (
+        round(100 * totals["points_earned_hardcore"] / totals["points_available"], 1)
         if totals["points_available"] else 0
     )
 

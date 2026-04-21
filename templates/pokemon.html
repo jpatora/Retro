@@ -30,7 +30,7 @@
     </div>
 </div>
 
-<div id="pokemon-root"><div class="loading">Cross-referencing 16 titles against RA… this can take a few seconds on the first load.</div></div>
+<div id="pokemon-root"><div class="loading">Cross-referencing 36 titles against RA… this can take a few seconds on the first load.</div></div>
 {% endblock %}
 
 {% block scripts %}
@@ -39,7 +39,7 @@ let POKEMON_DATA = null;
 
 async function loadPokemon() {
     const root = document.getElementById('pokemon-root');
-    root.innerHTML = '<div class="loading">Cross-referencing 16 titles against RA… this can take a few seconds on the first load.</div>';
+    root.innerHTML = '<div class="loading">Cross-referencing 36 titles against RA… this can take a few seconds on the first load.</div>';
     try {
         const r = await fetch('/api/pokemon');
         if (!r.ok) {
@@ -60,15 +60,22 @@ function render() {
     const filter = document.getElementById('filter').value;
 
     const t = POKEMON_DATA.totals;
+    const softcore = isSoftcore();
+    const modeLabel = softcore ? 'SC' : 'HC';
+    const playedCount = softcore ? t.games_played : t.games_played_hardcore;
+    const achEarned = softcore ? t.achievements_earned : t.achievements_earned_hardcore;
+    const achPct = softcore ? t.overall_percent : t.overall_percent_hardcore;
+    const ptsEarned = softcore ? t.points_earned : t.points_earned_hardcore;
+    const ptsPct = softcore ? t.overall_points_percent : t.overall_points_percent_hardcore;
     let html = '';
 
     // Totals strip
     html += `<div class="stat-grid">
         <div class="stat"><div class="label">Games</div><div class="value">${t.games_total}</div><div class="sub">${t.games_with_sets} with RA sets</div></div>
-        <div class="stat"><div class="label">Played</div><div class="value">${t.games_played}</div><div class="sub">of ${t.games_with_sets} playable</div></div>
+        <div class="stat"><div class="label">Played (${modeLabel})</div><div class="value">${playedCount}</div><div class="sub">of ${t.games_with_sets} playable</div></div>
         <div class="stat"><div class="label">Mastered</div><div class="value">${t.games_mastered}</div></div>
-        <div class="stat"><div class="label">Achievements</div><div class="value">${t.achievements_earned.toLocaleString()}</div><div class="sub">of ${t.achievements_available.toLocaleString()} (${t.overall_percent}%)</div></div>
-        <div class="stat"><div class="label">Points</div><div class="value">${t.points_earned.toLocaleString()}</div><div class="sub">of ${t.points_available.toLocaleString()} (${t.overall_points_percent}%)</div></div>
+        <div class="stat"><div class="label">Achievements (${modeLabel})</div><div class="value">${achEarned.toLocaleString()}</div><div class="sub">of ${t.achievements_available.toLocaleString()} (${achPct}%)</div></div>
+        <div class="stat"><div class="label">Points (${modeLabel})</div><div class="value">${ptsEarned.toLocaleString()}</div><div class="sub">of ${t.points_available.toLocaleString()} (${ptsPct}%)</div></div>
     </div>`;
 
     // Filter rows
@@ -93,7 +100,7 @@ function render() {
     // Group
     let groups;
     if (groupBy === 'console') {
-        const order = ['Game Boy', 'Game Boy Color', 'Game Boy Advance'];
+        const order = ['Game Boy', 'Game Boy Color', 'Game Boy Advance', 'Nintendo DS'];
         groups = order
             .map(name => ({ name, rows: rows.filter(r => r.console === name) }))
             .filter(g => g.rows.length);
@@ -113,12 +120,13 @@ function render() {
 }
 
 function renderTable(rows) {
+    const softcore = isSoftcore();
     let h = `<table><thead><tr>
         <th></th>
         <th>Title</th>
         <th>Console</th>
         <th>RA Set</th>
-        <th>Progress (HC)</th>
+        <th>Progress (${softcore ? 'SC' : 'HC'})</th>
         <th>Points</th>
         <th>Status</th>
     </tr></thead><tbody>`;
@@ -127,25 +135,36 @@ function renderTable(rows) {
         const icon = r.icon ? `https://retroachievements.org${r.icon}` : '';
         const rowAttrs = r.ra_game_id ? `class="clickable-row" data-game-id="${r.ra_game_id}"` : '';
 
+        // Pick primary + secondary numbers based on mode
+        const earnedPrimary   = softcore ? r.earned            : r.earned_hardcore;
+        const percentPrimary  = softcore ? r.percent           : r.percent_hardcore;
+        const pointsPrimary   = softcore ? r.points_earned     : r.points_earned_hardcore;
+        const earnedSecondary = softcore ? r.earned_hardcore   : r.earned;
+        const secondaryLabel  = softcore ? 'on hardcore'       : 'softcore';
+        const barClass        = softcore ? ''                  : ' hardcore';
+
         let status;
         if (!r.has_ra_set) {
             status = `<span class="badge common" style="background:#e5e7eb;color:#4b5563;">No RA Set</span>`;
         } else if (r.mastered) {
             status = `<span class="badge hardcore">Mastered</span>`;
-        } else if (r.earned > 0) {
+        } else if (earnedPrimary > 0) {
             status = `<span class="badge common">In Progress</span>`;
+        } else if (r.earned > 0) {
+            // Has softcore progress but mode is hardcore
+            status = `<span class="badge rare" style="background:#fde68a;color:#92400e;">Softcore Only</span>`;
         } else {
             status = `<span class="badge rare" style="background:#fde68a;color:#92400e;">Untouched</span>`;
         }
 
         const progressCell = r.has_ra_set
-            ? `${r.earned_hardcore} / ${r.achievements_total} (${r.percent_hardcore}%)
-               <div class="progress"><div class="bar hardcore" style="width:${r.percent_hardcore}%;"></div></div>
-               ${r.earned > r.earned_hardcore ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">+${r.earned - r.earned_hardcore} softcore</div>` : ''}`
+            ? `${earnedPrimary} / ${r.achievements_total} (${percentPrimary}%)
+               <div class="progress"><div class="bar${barClass}" style="width:${percentPrimary}%;"></div></div>
+               ${earnedSecondary !== earnedPrimary ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">${earnedSecondary} ${secondaryLabel}</div>` : ''}`
             : `<span style="color:var(--text-muted);">—</span>`;
 
         const pointsCell = r.has_ra_set
-            ? `<strong>${r.points_earned_hardcore}</strong> / ${r.points_total}`
+            ? `<strong>${pointsPrimary}</strong> / ${r.points_total}`
             : `<span style="color:var(--text-muted);">—</span>`;
 
         const raSetCell = r.has_ra_set
@@ -170,6 +189,7 @@ function renderTable(rows) {
 document.getElementById('group-by').addEventListener('change', render);
 document.getElementById('filter').addEventListener('change', render);
 document.getElementById('refresh-btn').addEventListener('click', loadPokemon);
+window.addEventListener('progressmodechange', render);
 
 loadPokemon();
 </script>

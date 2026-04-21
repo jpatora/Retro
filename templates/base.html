@@ -22,6 +22,11 @@
                 <a href="{{ url_for('hunt_tracker') }}" class="{% if request.endpoint == 'hunt_tracker' %}active{% endif %}">Hunt</a>
                 <a href="{{ url_for('mastery_candidates') }}" class="{% if request.endpoint == 'mastery_candidates' %}active{% endif %}">Mastery</a>
                 <a href="{{ url_for('pokemon_page') }}" class="{% if request.endpoint == 'pokemon_page' %}active{% endif %}">Pokémon</a>
+                <label class="mode-toggle" title="Toggle between softcore and hardcore progress display">
+                    <span id="progress-mode-label">Softcore</span>
+                    <input type="checkbox" id="progress-mode-toggle">
+                    <span class="slider"></span>
+                </label>
             </nav>
         </div>
     </header>
