@@ -30,6 +30,24 @@ app.config["RA_USERNAME"] = RA_USERNAME
 ra = RAClient(RA_USERNAME, RA_API_KEY) if RA_USERNAME and RA_API_KEY else None
 
 
+def _int(val, default: int = 0) -> int:
+    """
+    Coerce an RA API value to int. The API returns numbers as strings,
+    sometimes with decimals (e.g. "55.00%"). Handles None, empty strings,
+    percent signs, and decimal strings gracefully.
+    """
+    if val is None or val == "":
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        try:
+            s = str(val).replace("%", "").strip()
+            return int(float(s))
+        except (ValueError, TypeError):
+            return default
+
+
 def _require_client():
     if ra is None:
         abort(500, description=(
@@ -127,8 +145,8 @@ def api_weekly():
 
     # Aggregate
     total_achievements = len(achievements)
-    total_points = sum(int(a.get("Points", 0) or 0) for a in achievements)
-    total_retropoints = sum(int(a.get("TrueRatio", 0) or 0) for a in achievements)
+    total_points = sum(_int(a.get("Points", 0)) for a in achievements)
+    total_retropoints = sum(_int(a.get("TrueRatio", 0)) for a in achievements)
 
     # Group by day for chart
     by_day: dict[str, dict] = {}
@@ -138,7 +156,7 @@ def api_weekly():
             continue
         day = by_day.setdefault(date_str, {"count": 0, "points": 0})
         day["count"] += 1
-        day["points"] += int(a.get("Points", 0) or 0)
+        day["points"] += _int(a.get("Points", 0))
 
     # Fill missing days with zeros
     daily = []
@@ -163,7 +181,7 @@ def api_weekly():
             "points": 0,
         })
         g["count"] += 1
-        g["points"] += int(a.get("Points", 0) or 0)
+        g["points"] += _int(a.get("Points", 0))
 
     top_games = sorted(by_game.values(), key=lambda x: x["points"], reverse=True)[:10]
 
@@ -193,7 +211,7 @@ def api_play_tonight():
 
     candidates = []
     for g in results:
-        achievements_total = int(g.get("AchievementsPublished", 0) or 0)
+        achievements_total = _int(g.get("AchievementsPublished", 0))
         if achievements_total == 0:
             continue
 
@@ -207,7 +225,7 @@ def api_play_tonight():
         except Exception:
             progress = {}
 
-        num_awarded = int(progress.get("NumAwardedToUser", 0) or 0)
+        num_awarded = _int(progress.get("NumAwardedToUser", 0))
         if exclude_started and num_awarded > 0:
             continue
 
@@ -221,8 +239,8 @@ def api_play_tonight():
             "console": g.get("ConsoleName"),
             "icon": g.get("ImageIcon"),
             "achievements": achievements_total,
-            "points": int(g.get("PointsTotal", 0) or 0),
-            "players_total": int(g.get("NumPossibleAchievements", 0) or 0),
+            "points": _int(g.get("PointsTotal", 0)),
+            "players_total": _int(g.get("NumPossibleAchievements", 0)),
             "est_minutes": est_minutes,
             "user_progress_pct": (
                 round(100 * num_awarded / achievements_total, 1)
@@ -259,14 +277,14 @@ def api_hunt(game_id: int):
             "id": int(ach_id),
             "title": a.get("Title"),
             "description": a.get("Description"),
-            "points": int(a.get("Points", 0) or 0),
+            "points": _int(a.get("Points", 0)),
             "badge": a.get("BadgeName"),
             "type": a.get("type"),
             "earned_hardcore": bool(a.get("DateEarnedHardcore")),
             "earned": bool(a.get("DateEarned")),
             "date_earned": a.get("DateEarnedHardcore") or a.get("DateEarned"),
-            "num_awarded": int(a.get("NumAwarded", 0) or 0),
-            "num_awarded_hardcore": int(a.get("NumAwardedHardcore", 0) or 0),
+            "num_awarded": _int(a.get("NumAwarded", 0)),
+            "num_awarded_hardcore": _int(a.get("NumAwardedHardcore", 0)),
         })
 
     # Separate earned vs remaining
@@ -274,13 +292,20 @@ def api_hunt(game_id: int):
     earned = [a for a in achievements if a["earned_hardcore"]]
 
     # Sort remaining by rarity (most-unlocked first = easiest)
-    num_distinct = int(progress.get("NumDistinctPlayersCasual", 1) or 1)
+    num_distinct = _int(progress.get("NumDistinctPlayersCasual", 1), 1)
     for a in remaining:
         a["rarity_pct"] = (
             round(100 * a["num_awarded"] / num_distinct, 1)
             if num_distinct else 0
         )
     remaining.sort(key=lambda a: a["num_awarded"], reverse=True)
+
+    # UserCompletion comes back like "55.00%" — parse as float, then int.
+    pct_str = str(progress.get("UserCompletion", "0") or "0").replace("%", "").strip()
+    try:
+        points_earned = int(float(pct_str))
+    except (ValueError, TypeError):
+        points_earned = 0
 
     return jsonify({
         "game": {
@@ -296,7 +321,7 @@ def api_hunt(game_id: int):
         "progress": {
             "earned": len(earned),
             "total": len(achievements),
-            "points_earned": int(progress.get("UserCompletion", "0%").replace("%", "") or 0),
+            "points_earned": points_earned,
             "percent": round(100 * len(earned) / len(achievements), 1) if achievements else 0,
         },
         "remaining": remaining,
@@ -314,9 +339,9 @@ def api_mastery():
 
     candidates = []
     for g in games:
-        total = int(g.get("MaxPossible", 0) or 0)
-        earned = int(g.get("NumAwarded", 0) or 0)
-        earned_hc = int(g.get("NumAwardedHardcore", 0) or 0)
+        total = _int(g.get("MaxPossible", 0))
+        earned = _int(g.get("NumAwarded", 0))
+        earned_hc = _int(g.get("NumAwardedHardcore", 0))
         if total == 0:
             continue
 
