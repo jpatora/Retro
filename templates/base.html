@@ -21,6 +21,7 @@
                 <a href="{{ url_for('play_tonight') }}" class="{% if request.endpoint == 'play_tonight' %}active{% endif %}">Play Tonight</a>
                 <a href="{{ url_for('hunt_tracker') }}" class="{% if request.endpoint == 'hunt_tracker' %}active{% endif %}">Hunt</a>
                 <a href="{{ url_for('mastery_candidates') }}" class="{% if request.endpoint == 'mastery_candidates' %}active{% endif %}">Mastery</a>
+                <a href="{{ url_for('pokemon_page') }}" class="{% if request.endpoint == 'pokemon_page' %}active{% endif %}">Pokémon</a>
             </nav>
         </div>
     </header>

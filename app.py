@@ -15,6 +15,7 @@ from flask import Flask, render_template, request, jsonify, abort
 from dotenv import load_dotenv
 
 from ra_client import RAClient
+from pokemon_catalog import POKEMON_TITLES, find_best_match
 
 load_dotenv()
 
@@ -99,6 +100,11 @@ def hunt_tracker():
 @app.route("/mastery")
 def mastery_candidates():
     return render_template("mastery.html", username=RA_USERNAME)
+
+
+@app.route("/pokemon")
+def pokemon_page():
+    return render_template("pokemon.html", username=RA_USERNAME)
 
 
 # ---------------------------------------------------------------------------
@@ -404,6 +410,145 @@ def api_search_game():
     ][:25]
 
     return jsonify({"results": matches})
+
+
+@app.route("/api/pokemon")
+def api_pokemon():
+    """
+    Cross-reference the canonical Pokémon title list against RA's game lists
+    for Game Boy (4), Game Boy Color (6), and Game Boy Advance (5), then pull
+    each matched game's user progress.
+    """
+    _require_client()
+
+    # Fetch per-console game catalogs once. These responses are large but
+    # RA's in-memory cache on the client keeps this cheap on repeat calls.
+    console_catalogs: dict[int, list] = {}
+    for cid in (4, 5, 6):
+        try:
+            console_catalogs[cid] = ra.get_game_list(cid, has_achievements_only=True)
+        except Exception as e:
+            console_catalogs[cid] = []
+            print(f"Failed to fetch game list for console {cid}: {e}")
+
+    CONSOLE_NAMES = {4: "Game Boy", 6: "Game Boy Color", 5: "Game Boy Advance"}
+
+    results = []
+    totals = {
+        "games_total": len(POKEMON_TITLES),
+        "games_with_sets": 0,
+        "games_played": 0,
+        "games_mastered": 0,
+        "achievements_earned": 0,
+        "achievements_available": 0,
+        "points_earned": 0,
+        "points_available": 0,
+    }
+
+    for entry in POKEMON_TITLES:
+        cid = entry["console_id"]
+        catalog = console_catalogs.get(cid, [])
+        match = find_best_match(entry, catalog)
+
+        row = {
+            "title": entry["title"],
+            "console": CONSOLE_NAMES[cid],
+            "console_id": cid,
+            "has_ra_set": False,
+            "ra_game_id": None,
+            "ra_title": None,
+            "icon": None,
+            "achievements_total": 0,
+            "points_total": 0,
+            "num_leaderboards": 0,
+            "date_modified": None,
+            "earned": 0,
+            "earned_hardcore": 0,
+            "points_earned": 0,
+            "points_earned_hardcore": 0,
+            "percent": 0.0,
+            "percent_hardcore": 0.0,
+            "mastered": False,
+            "player_count": 0,
+        }
+
+        if match:
+            row["has_ra_set"] = True
+            row["ra_game_id"] = match.get("ID")
+            row["ra_title"] = match.get("Title")
+            row["icon"] = match.get("ImageIcon")
+            row["achievements_total"] = _int(match.get("NumAchievements"))
+            row["points_total"] = _int(match.get("Points"))
+            row["num_leaderboards"] = _int(match.get("NumLeaderboards"))
+            row["date_modified"] = match.get("DateModified")
+
+            totals["games_with_sets"] += 1
+            totals["achievements_available"] += row["achievements_total"]
+            totals["points_available"] += row["points_total"]
+
+            # Pull user progress on this specific game
+            try:
+                progress = ra.get_game_info_and_progress(int(row["ra_game_id"]))
+            except Exception as e:
+                print(f"Progress fetch failed for {row['ra_title']}: {e}")
+                progress = {}
+
+            if progress:
+                row["earned"] = _int(progress.get("NumAwardedToUser"))
+                row["earned_hardcore"] = _int(progress.get("NumAwardedToUserHardcore"))
+                row["points_earned"] = _int(progress.get("UserCompletion"))  # safe via _int
+                row["player_count"] = _int(progress.get("NumDistinctPlayersCasual"))
+
+                # Sum up points from individual achievements earned
+                ach_dict = progress.get("Achievements") or {}
+                pe = 0
+                pe_hc = 0
+                for a in ach_dict.values():
+                    pts = _int(a.get("Points"))
+                    if a.get("DateEarned"):
+                        pe += pts
+                    if a.get("DateEarnedHardcore"):
+                        pe_hc += pts
+                row["points_earned"] = pe
+                row["points_earned_hardcore"] = pe_hc
+
+                if row["achievements_total"]:
+                    row["percent"] = round(
+                        100 * row["earned"] / row["achievements_total"], 1
+                    )
+                    row["percent_hardcore"] = round(
+                        100 * row["earned_hardcore"] / row["achievements_total"], 1
+                    )
+
+                row["mastered"] = (
+                    row["achievements_total"] > 0
+                    and row["earned_hardcore"] >= row["achievements_total"]
+                )
+
+                if row["earned"] > 0:
+                    totals["games_played"] += 1
+                if row["mastered"]:
+                    totals["games_mastered"] += 1
+
+                totals["achievements_earned"] += row["earned"]
+                totals["points_earned"] += row["points_earned"]
+
+        results.append(row)
+
+    # Overall completion percentages
+    totals["overall_percent"] = (
+        round(100 * totals["achievements_earned"] / totals["achievements_available"], 1)
+        if totals["achievements_available"] else 0
+    )
+    totals["overall_points_percent"] = (
+        round(100 * totals["points_earned"] / totals["points_available"], 1)
+        if totals["points_available"] else 0
+    )
+
+    return jsonify({
+        "totals": totals,
+        "results": results,
+    })
 
 
 if __name__ == "__main__":

@@ -120,6 +120,17 @@ class RAClient:
     def get_game(self, game_id: int) -> dict:
         return self._get("API_GetGame.php", {"i": game_id})
 
+    def get_game_list(self, console_id: int, has_achievements_only: bool = True) -> list:
+        """
+        Get the complete list of games for a console.
+        NOTE: Response can be large; RA asks that this be cached aggressively.
+        """
+        data = self._get(
+            "API_GetGameList.php",
+            {"i": console_id, "f": 1 if has_achievements_only else 0},
+        )
+        return data if isinstance(data, list) else []
+
     def get_game_extended(self, game_id: int) -> dict:
         return self._get("API_GetGameExtended.php", {"i": game_id})
 

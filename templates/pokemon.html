@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Pokémon · RA Companion{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Pokémon Collection on RetroAchievements</h2>
+    <p style="color:var(--text-muted);margin-top:-0.5rem;">
+        Cross-references every mainline &amp; major spin-off Pokémon title
+        released on Game Boy, Game Boy Color, and Game Boy Advance against
+        your RA progress. Click any row to open the Hunt tracker for that game.
+    </p>
+    <div class="controls">
+        <label>Group by:
+            <select id="group-by">
+                <option value="none" selected>No grouping</option>
+                <option value="console">Console</option>
+            </select>
+        </label>
+        <label>Show:
+            <select id="filter">
+                <option value="all" selected>All games</option>
+                <option value="with_set">With RA set</option>
+                <option value="played">Played by me</option>
+                <option value="unplayed_with_set">Unplayed (with set)</option>
+                <option value="mastered">Mastered</option>
+                <option value="no_set">No RA set</option>
+            </select>
+        </label>
+        <button id="refresh-btn">Refresh</button>
+    </div>
+</div>
+
+<div id="pokemon-root"><div class="loading">Cross-referencing 16 titles against RA… this can take a few seconds on the first load.</div></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let POKEMON_DATA = null;
+
+async function loadPokemon() {
+    const root = document.getElementById('pokemon-root');
+    root.innerHTML = '<div class="loading">Cross-referencing 16 titles against RA… this can take a few seconds on the first load.</div>';
+    try {
+        const r = await fetch('/api/pokemon');
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({error: 'HTTP ' + r.status}));
+            throw new Error(err.error || ('HTTP ' + r.status));
+        }
+        POKEMON_DATA = await r.json();
+        render();
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+    }
+}
+
+function render() {
+    if (!POKEMON_DATA) return;
+    const root = document.getElementById('pokemon-root');
+    const groupBy = document.getElementById('group-by').value;
+    const filter = document.getElementById('filter').value;
+
+    const t = POKEMON_DATA.totals;
+    let html = '';
+
+    // Totals strip
+    html += `<div class="stat-grid">
+        <div class="stat"><div class="label">Games</div><div class="value">${t.games_total}</div><div class="sub">${t.games_with_sets} with RA sets</div></div>
+        <div class="stat"><div class="label">Played</div><div class="value">${t.games_played}</div><div class="sub">of ${t.games_with_sets} playable</div></div>
+        <div class="stat"><div class="label">Mastered</div><div class="value">${t.games_mastered}</div></div>
+        <div class="stat"><div class="label">Achievements</div><div class="value">${t.achievements_earned.toLocaleString()}</div><div class="sub">of ${t.achievements_available.toLocaleString()} (${t.overall_percent}%)</div></div>
+        <div class="stat"><div class="label">Points</div><div class="value">${t.points_earned.toLocaleString()}</div><div class="sub">of ${t.points_available.toLocaleString()} (${t.overall_points_percent}%)</div></div>
+    </div>`;
+
+    // Filter rows
+    let rows = POKEMON_DATA.results.slice();
+    rows = rows.filter(r => {
+        switch (filter) {
+            case 'with_set': return r.has_ra_set;
+            case 'played': return r.earned > 0;
+            case 'unplayed_with_set': return r.has_ra_set && r.earned === 0;
+            case 'mastered': return r.mastered;
+            case 'no_set': return !r.has_ra_set;
+            default: return true;
+        }
+    });
+
+    if (!rows.length) {
+        html += `<div class="card"><div class="empty">No games match this filter.</div></div>`;
+        root.innerHTML = html;
+        return;
+    }
+
+    // Group
+    let groups;
+    if (groupBy === 'console') {
+        const order = ['Game Boy', 'Game Boy Color', 'Game Boy Advance'];
+        groups = order
+            .map(name => ({ name, rows: rows.filter(r => r.console === name) }))
+            .filter(g => g.rows.length);
+    } else {
+        groups = [{ name: null, rows }];
+    }
+
+    for (const g of groups) {
+        html += `<div class="card">`;
+        if (g.name) html += `<h2>${g.name}</h2>`;
+        html += renderTable(g.rows);
+        html += `</div>`;
+    }
+
+    root.innerHTML = html;
+    wireGameLinks(root);
+}
+
+function renderTable(rows) {
+    let h = `<table><thead><tr>
+        <th></th>
+        <th>Title</th>
+        <th>Console</th>
+        <th>RA Set</th>
+        <th>Progress (HC)</th>
+        <th>Points</th>
+        <th>Status</th>
+    </tr></thead><tbody>`;
+
+    for (const r of rows) {
+        const icon = r.icon ? `https://retroachievements.org${r.icon}` : '';
+        const rowAttrs = r.ra_game_id ? `class="clickable-row" data-game-id="${r.ra_game_id}"` : '';
+
+        let status;
+        if (!r.has_ra_set) {
+            status = `<span class="badge common" style="background:#e5e7eb;color:#4b5563;">No RA Set</span>`;
+        } else if (r.mastered) {
+            status = `<span class="badge hardcore">Mastered</span>`;
+        } else if (r.earned > 0) {
+            status = `<span class="badge common">In Progress</span>`;
+        } else {
+            status = `<span class="badge rare" style="background:#fde68a;color:#92400e;">Untouched</span>`;
+        }
+
+        const progressCell = r.has_ra_set
+            ? `${r.earned_hardcore} / ${r.achievements_total} (${r.percent_hardcore}%)
+               <div class="progress"><div class="bar hardcore" style="width:${r.percent_hardcore}%;"></div></div>
+               ${r.earned > r.earned_hardcore ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">+${r.earned - r.earned_hardcore} softcore</div>` : ''}`
+            : `<span style="color:var(--text-muted);">—</span>`;
+
+        const pointsCell = r.has_ra_set
+            ? `<strong>${r.points_earned_hardcore}</strong> / ${r.points_total}`
+            : `<span style="color:var(--text-muted);">—</span>`;
+
+        const raSetCell = r.has_ra_set
+            ? `${r.achievements_total} ach · ${r.points_total} pts<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">${r.ra_title || ''}</div>`
+            : `<span style="color:var(--text-muted);">Not available</span>`;
+
+        h += `<tr ${rowAttrs}>
+            <td>${icon ? `<img src="${icon}" alt="" style="width:40px;height:40px;border-radius:4px;">` : ''}</td>
+            <td><strong>${r.title}</strong></td>
+            <td>${r.console}</td>
+            <td>${raSetCell}</td>
+            <td>${progressCell}</td>
+            <td>${pointsCell}</td>
+            <td>${status}</td>
+        </tr>`;
+    }
+
+    h += `</tbody></table>`;
+    return h;
+}
+
+document.getElementById('group-by').addEventListener('change', render);
+document.getElementById('filter').addEventListener('change', render);
+document.getElementById('refresh-btn').addEventListener('click', loadPokemon);
+
+loadPokemon();
+</script>
+{% endblock %}
