@@ -119,11 +119,15 @@ def api_dashboard():
     awards = ra.get_user_awards()
     recent = ra.get_user_recent_achievements(minutes=60 * 24 * 30)  # last 30 days
 
-    # Pull mastered games list from awards
+    # Pull mastered games list from awards, separated by type
     mastered = []
+    beaten = []
     for award in (awards or {}).get("VisibleUserAwards", []) or []:
-        if award.get("AwardType") in ("Mastery/Completion", "Game Beaten"):
+        atype = award.get("AwardType", "")
+        if atype in ("Mastery/Completion", "Mastered", "Completed"):
             mastered.append(award)
+        elif atype in ("Game Beaten",):
+            beaten.append(award)
 
     awards_data = awards or {}
     summary_data = summary or {}
@@ -146,6 +150,7 @@ def api_dashboard():
             "beaten_softcore_count": awards_data.get("BeatenSoftcoreAwardsCount", 0),
         },
         "mastered": mastered[:24],
+        "beaten": beaten[:24],
         "recent_unlocks": recent[:20],
     })
 

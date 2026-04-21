@@ -108,7 +108,30 @@ function renderDashboard(root, data) {
     }
     html += `</div>`;
 
-    // Mastered games
+    // Beaten games
+    html += `<div class="card">
+        <h2>Recently Beaten</h2>`;
+    if (!data.beaten || data.beaten.length === 0) {
+        html += `<div class="empty">No beaten games to show.</div>`;
+    } else {
+        html += `<div class="game-list">`;
+        for (const m of data.beaten) {
+            const icon = m.ImageIcon ? `https://retroachievements.org${m.ImageIcon}` : '';
+            const gid = m.AwardData || m.GameID || '';
+            html += `<div class="game-card" ${gid ? `data-game-id="${gid}"` : ''}>
+                ${icon ? `<img src="${icon}" alt="">` : ''}
+                <div class="meta">
+                    <div class="title" title="${m.Title || ''}">${m.Title || 'Unknown'}</div>
+                    <div class="console">${m.ConsoleName || ''}</div>
+                    <div class="stats">${m.AwardType || 'Game Beaten'} · ${(m.AwardedAt || '').slice(0,10)}</div>
+                </div>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    // Mastered / Completed games
     html += `<div class="card">
         <h2>Recent Masteries</h2>`;
     if (!data.mastered || data.mastered.length === 0) {
