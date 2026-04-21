@@ -58,8 +58,8 @@ function renderDashboard(root, data) {
     const secondaryPointsValue = softcore ? (p.TotalPoints || 0) : (p.TotalSoftcorePoints || 0);
 
     html += `<div class="stat-grid">
-        <div class="stat"><div class="label">${primaryPointsLabel}</div><div class="value">${primaryPointsValue.toLocaleString()}</div></div>
-        <div class="stat"><div class="label">${secondaryPointsLabel}</div><div class="value">${secondaryPointsValue.toLocaleString()}</div></div>
+        <div class="stat primary"><div class="label">${primaryPointsLabel}</div><div class="value">${primaryPointsValue.toLocaleString()}</div></div>
+        <div class="stat secondary"><div class="label">${secondaryPointsLabel}</div><div class="value">${secondaryPointsValue.toLocaleString()}</div></div>
         <div class="stat"><div class="label">RetroPoints</div><div class="value">${(p.TotalTruePoints || 0).toLocaleString()}</div></div>
         <div class="stat"><div class="label">Rank</div><div class="value">#${(p.Rank || '—').toLocaleString()}</div></div>
         <div class="stat"><div class="label">Masteries</div><div class="value">${aw.mastery_count || 0}</div></div>

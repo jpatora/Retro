@@ -270,6 +270,14 @@ def api_play_tonight():
     })
 
 
+@app.route("/api/cache/clear", methods=["POST", "GET"])
+def api_cache_clear():
+    """Clear the RAClient's in-memory response cache."""
+    _require_client()
+    ra.clear_cache()
+    return jsonify({"cleared": True})
+
+
 @app.route("/api/debug/hunt/<int:game_id>")
 def api_debug_hunt(game_id: int):
     """Dump the raw RA API response for a game so we can inspect field names."""

@@ -229,6 +229,16 @@ body {
     text-align: left;
 }
 
+.stat.primary {
+    background: linear-gradient(135deg, var(--accent), #b8851a);
+    box-shadow: 0 2px 8px rgba(212, 160, 23, 0.3);
+}
+
+.stat.secondary {
+    background: linear-gradient(135deg, #6b7a95, #4a5a75);
+    opacity: 0.75;
+}
+
 .stat .label {
     font-size: 0.75rem;
     text-transform: uppercase;

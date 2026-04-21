@@ -37,10 +37,13 @@
 <script>
 let POKEMON_DATA = null;
 
-async function loadPokemon() {
+async function loadPokemon(forceRefresh = false) {
     const root = document.getElementById('pokemon-root');
     root.innerHTML = '<div class="loading">Cross-referencing 36 titles against RA… this can take a few seconds on the first load.</div>';
     try {
+        if (forceRefresh) {
+            await fetch('/api/cache/clear').catch(() => {});
+        }
         const r = await fetch('/api/pokemon');
         if (!r.ok) {
             const err = await r.json().catch(() => ({error: 'HTTP ' + r.status}));
@@ -188,7 +191,7 @@ function renderTable(rows) {
 
 document.getElementById('group-by').addEventListener('change', render);
 document.getElementById('filter').addEventListener('change', render);
-document.getElementById('refresh-btn').addEventListener('click', loadPokemon);
+document.getElementById('refresh-btn').addEventListener('click', () => loadPokemon(true));
 window.addEventListener('progressmodechange', render);
 
 loadPokemon();
