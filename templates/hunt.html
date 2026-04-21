@@ -78,10 +78,17 @@ function render(root, data) {
                 <h2 style="border:none;margin:0;">${g.title}</h2>
                 <div style="color:var(--text-muted);font-size:0.9rem;">${g.console} · ${g.developer || ''} · ${g.released || ''}</div>
                 <div style="margin-top:0.5rem;font-weight:600;">${p.earned} / ${p.total} achievements (${p.percent}%)</div>
+                ${p.earned_hardcore ? `<div style="font-size:0.85rem;color:var(--text-muted);">${p.earned_hardcore} on hardcore</div>` : ''}
                 <div class="progress"><div class="bar" style="width:${p.percent}%;"></div></div>
             </div>
         </div>
     </div>`;
+
+    if (data.warning) {
+        html += `<div class="error" style="background:#fef3c7;border-color:#fde68a;color:#92400e;">
+            <strong>Note:</strong> ${data.warning}
+        </div>`;
+    }
 
     html += `<div class="card"><h2>Remaining (${data.remaining.length}) — easiest first</h2>`;
     if (!data.remaining.length) {

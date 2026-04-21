@@ -270,35 +270,63 @@ def api_play_tonight():
     })
 
 
+@app.route("/api/debug/hunt/<int:game_id>")
+def api_debug_hunt(game_id: int):
+    """Dump the raw RA API response for a game so we can inspect field names."""
+    _require_client()
+    progress = ra.get_game_info_and_progress(game_id) or {}
+    # Show the top-level keys + a sample achievement
+    achievements = progress.get("Achievements") or {}
+    sample_key = next(iter(achievements), None)
+    sample = achievements.get(sample_key) if sample_key else None
+    return jsonify({
+        "top_level_keys": sorted(progress.keys()),
+        "sample_achievement_keys": sorted(sample.keys()) if sample else None,
+        "sample_achievement": sample,
+        "num_achievements_total": len(achievements),
+        "num_with_DateEarned": sum(1 for a in achievements.values() if a.get("DateEarned")),
+        "num_with_DateEarnedHardcore": sum(1 for a in achievements.values() if a.get("DateEarnedHardcore")),
+        "NumAwardedToUser": progress.get("NumAwardedToUser"),
+        "NumAwardedToUserHardcore": progress.get("NumAwardedToUserHardcore"),
+        "UserCompletion": progress.get("UserCompletion"),
+        "UserCompletionHardcore": progress.get("UserCompletionHardcore"),
+        "requested_as_username": ra.username,
+    })
+
+
 @app.route("/api/hunt/<int:game_id>")
 def api_hunt(game_id: int):
     _require_client()
     progress = ra.get_game_info_and_progress(game_id) or {}
-    distribution = ra.get_game_progression(game_id) or {}
 
     achievements_dict = progress.get("Achievements") or {}
     achievements = []
     for ach_id, a in achievements_dict.items():
+        # Different RA endpoints / API versions may use different casings
+        date_earned = a.get("DateEarned") or a.get("dateEarned")
+        date_earned_hc = a.get("DateEarnedHardcore") or a.get("dateEarnedHardcore")
+
         achievements.append({
             "id": int(ach_id),
-            "title": a.get("Title"),
-            "description": a.get("Description"),
-            "points": _int(a.get("Points", 0)),
-            "badge": a.get("BadgeName"),
-            "type": a.get("type"),
-            "earned_hardcore": bool(a.get("DateEarnedHardcore")),
-            "earned": bool(a.get("DateEarned")),
-            "date_earned": a.get("DateEarnedHardcore") or a.get("DateEarned"),
-            "num_awarded": _int(a.get("NumAwarded", 0)),
-            "num_awarded_hardcore": _int(a.get("NumAwardedHardcore", 0)),
+            "title": a.get("Title") or a.get("title"),
+            "description": a.get("Description") or a.get("description"),
+            "points": _int(a.get("Points") or a.get("points")),
+            "badge": a.get("BadgeName") or a.get("badgeName"),
+            "type": a.get("type") or a.get("Type"),
+            "earned_hardcore": bool(date_earned_hc),
+            "earned": bool(date_earned or date_earned_hc),
+            "date_earned": date_earned_hc or date_earned,
+            "num_awarded": _int(a.get("NumAwarded") or a.get("numAwarded")),
+            "num_awarded_hardcore": _int(a.get("NumAwardedHardcore") or a.get("numAwardedHardcore")),
         })
 
-    # Separate earned vs remaining
-    remaining = [a for a in achievements if not a["earned_hardcore"]]
-    earned = [a for a in achievements if a["earned_hardcore"]]
+    # Separate earned vs remaining. Use earned (softcore) since hardcore
+    # may be empty for users who played in softcore mode.
+    remaining = [a for a in achievements if not a["earned"]]
+    earned = [a for a in achievements if a["earned"]]
 
     # Sort remaining by rarity (most-unlocked first = easiest)
-    num_distinct = _int(progress.get("NumDistinctPlayersCasual", 1), 1)
+    num_distinct = _int(progress.get("NumDistinctPlayersCasual"), 1) or 1
     for a in remaining:
         a["rarity_pct"] = (
             round(100 * a["num_awarded"] / num_distinct, 1)
@@ -306,12 +334,27 @@ def api_hunt(game_id: int):
         )
     remaining.sort(key=lambda a: a["num_awarded"], reverse=True)
 
-    # UserCompletion comes back like "55.00%" — parse as float, then int.
-    pct_str = str(progress.get("UserCompletion", "0") or "0").replace("%", "").strip()
-    try:
-        points_earned = int(float(pct_str))
-    except (ValueError, TypeError):
-        points_earned = 0
+    # Use the authoritative summary counts from the API when available.
+    # Fall back to our parsed list count if missing.
+    num_earned_from_api = _int(progress.get("NumAwardedToUser"))
+    num_earned_hc_from_api = _int(progress.get("NumAwardedToUserHardcore"))
+    total_achievements = len(achievements)
+
+    # If the per-achievement DateEarned fields are missing but the summary
+    # shows earned > 0, warn the user we couldn't resolve which specific
+    # ones were earned.
+    warning = None
+    if num_earned_from_api > 0 and len(earned) == 0:
+        warning = (
+            f"RA reports {num_earned_from_api} achievements earned but did not "
+            f"return per-achievement unlock dates. The earned/remaining lists "
+            f"below may be incomplete."
+        )
+
+    percent_overall = (
+        round(100 * num_earned_from_api / total_achievements, 1)
+        if total_achievements else 0
+    )
 
     return jsonify({
         "game": {
@@ -325,11 +368,12 @@ def api_hunt(game_id: int):
             "released": progress.get("Released"),
         },
         "progress": {
-            "earned": len(earned),
-            "total": len(achievements),
-            "points_earned": points_earned,
-            "percent": round(100 * len(earned) / len(achievements), 1) if achievements else 0,
+            "earned": num_earned_from_api or len(earned),
+            "earned_hardcore": num_earned_hc_from_api or sum(1 for a in earned if a["earned_hardcore"]),
+            "total": total_achievements,
+            "percent": percent_overall,
         },
+        "warning": warning,
         "remaining": remaining,
         "earned": earned,
     })
