@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · RA Companion{% endblock %}
+
+{% block content %}
+<div id="dashboard-root">
+    <div class="loading">Loading profile…</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+    const root = document.getElementById('dashboard-root');
+    try {
+        const r = await fetch('/api/dashboard');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        renderDashboard(root, data);
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load dashboard: ${e.message}</div>`;
+    }
+}
+
+function renderDashboard(root, data) {
+    const p = data.profile || {};
+    const aw = data.awards_summary || {};
+    const avatar = p.UserPic ? `https://retroachievements.org${p.UserPic}` : '';
+
+    let html = '';
+
+    // Profile header
+    html += `<div class="card">
+        <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;">
+            ${avatar ? `<img src="${avatar}" alt="avatar" style="width:80px;height:80px;border-radius:6px;">` : ''}
+            <div>
+                <h2 style="border:none;margin:0;">${p.User || ''} ${p.Motto ? `<span style="font-size:0.85rem;color:var(--text-muted);font-weight:normal;">— "${p.Motto}"</span>` : ''}</h2>
+                <div style="color:var(--text-muted);font-size:0.9rem;">${p.RichPresenceMsg || 'Not currently playing'}</div>
+            </div>
+        </div>
+    </div>`;
+
+    // Stat tiles
+    html += `<div class="stat-grid">
+        <div class="stat"><div class="label">Points (HC)</div><div class="value">${(p.TotalPoints || 0).toLocaleString()}</div></div>
+        <div class="stat"><div class="label">Softcore Points</div><div class="value">${(p.TotalSoftcorePoints || 0).toLocaleString()}</div></div>
+        <div class="stat"><div class="label">RetroPoints</div><div class="value">${(p.TotalTruePoints || 0).toLocaleString()}</div></div>
+        <div class="stat"><div class="label">Rank</div><div class="value">#${(p.Rank || '—').toLocaleString()}</div></div>
+        <div class="stat"><div class="label">Masteries</div><div class="value">${aw.mastery_count || 0}</div></div>
+        <div class="stat"><div class="label">Games Beaten</div><div class="value">${aw.beaten_count || 0}</div></div>
+    </div>`;
+
+    // Recent unlocks
+    html += `<div class="card">
+        <h2>Recent Unlocks (30 days)</h2>`;
+    if (!data.recent_unlocks || data.recent_unlocks.length === 0) {
+        html += `<div class="empty">No recent unlocks.</div>`;
+    } else {
+        html += `<ul class="unlock-list">`;
+        for (const a of data.recent_unlocks) {
+            const badge = a.BadgeURL || (a.BadgeName ? `https://media.retroachievements.org/Badge/${a.BadgeName}.png` : '');
+            html += `<li>
+                ${badge ? `<img src="${badge}" alt="badge">` : ''}
+                <div style="flex:1;min-width:0;">
+                    <div class="ach-title">${a.Title || ''}</div>
+                    <div class="ach-meta">${a.GameTitle || ''} · ${a.ConsoleName || ''} · ${a.Date || ''}</div>
+                </div>
+                <span class="ach-points">+${a.Points || 0}</span>
+            </li>`;
+        }
+        html += `</ul>`;
+    }
+    html += `</div>`;
+
+    // Mastered games
+    html += `<div class="card">
+        <h2>Recent Masteries</h2>`;
+    if (!data.mastered || data.mastered.length === 0) {
+        html += `<div class="empty">No masteries to show.</div>`;
+    } else {
+        html += `<div class="game-list">`;
+        for (const m of data.mastered) {
+            const icon = m.ImageIcon ? `https://retroachievements.org${m.ImageIcon}` : '';
+            html += `<div class="game-card">
+                ${icon ? `<img src="${icon}" alt="">` : ''}
+                <div class="meta">
+                    <div class="title" title="${m.Title || ''}">${m.Title || 'Unknown'}</div>
+                    <div class="console">${m.ConsoleName || ''}</div>
+                    <div class="stats">${m.AwardType || ''} · ${(m.AwardedAt || '').slice(0,10)}</div>
+                </div>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    root.innerHTML = html;
+}
+
+loadDashboard();
+</script>
+{% endblock %}

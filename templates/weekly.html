@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Weekly Report · RA Companion{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Weekly Report</h2>
+    <div class="controls">
+        <label>Window:
+            <select id="days-select">
+                <option value="7" selected>Last 7 days</option>
+                <option value="14">Last 14 days</option>
+                <option value="30">Last 30 days</option>
+            </select>
+        </label>
+        <button id="refresh-btn">Refresh</button>
+    </div>
+</div>
+<div id="weekly-root"><div class="loading">Loading…</div></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let chartInstance = null;
+
+async function loadWeekly() {
+    const root = document.getElementById('weekly-root');
+    root.innerHTML = '<div class="loading">Loading…</div>';
+    const days = document.getElementById('days-select').value;
+    try {
+        const r = await fetch(`/api/weekly?days=${days}`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        renderWeekly(root, data);
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+    }
+}
+
+function renderWeekly(root, data) {
+    const t = data.totals;
+    let html = '';
+
+    html += `<div class="stat-grid">
+        <div class="stat"><div class="label">Achievements</div><div class="value">${t.achievements}</div></div>
+        <div class="stat"><div class="label">Points Earned</div><div class="value">${t.points.toLocaleString()}</div></div>
+        <div class="stat"><div class="label">RetroPoints</div><div class="value">${t.retropoints.toLocaleString()}</div></div>
+        <div class="stat"><div class="label">Avg / Day</div><div class="value">${(t.achievements / data.days).toFixed(1)}</div></div>
+    </div>`;
+
+    html += `<div class="card"><h2>Daily Activity</h2><canvas id="daily-chart" height="80"></canvas></div>`;
+
+    html += `<div class="card"><h2>Top Games This Period</h2>`;
+    if (!data.top_games.length) {
+        html += `<div class="empty">No activity in this window.</div>`;
+    } else {
+        html += `<div class="game-list">`;
+        for (const g of data.top_games) {
+            const icon = g.game_icon ? `https://retroachievements.org${g.game_icon}` : '';
+            html += `<div class="game-card">
+                ${icon ? `<img src="${icon}" alt="">` : ''}
+                <div class="meta">
+                    <div class="title" title="${g.game_title}">${g.game_title}</div>
+                    <div class="console">${g.console || ''}</div>
+                    <div class="stats">${g.count} unlocks · ${g.points} pts</div>
+                </div>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    html += `<div class="card"><h2>All Unlocks</h2>`;
+    if (!data.achievements.length) {
+        html += `<div class="empty">No unlocks.</div>`;
+    } else {
+        html += `<ul class="unlock-list">`;
+        for (const a of data.achievements) {
+            const badge = a.BadgeURL || (a.BadgeName ? `https://media.retroachievements.org/Badge/${a.BadgeName}.png` : '');
+            html += `<li>
+                ${badge ? `<img src="${badge}" alt="">` : ''}
+                <div style="flex:1;min-width:0;">
+                    <div class="ach-title">${a.Title || ''}</div>
+                    <div class="ach-meta">${a.GameTitle || ''} · ${a.Date || ''}</div>
+                </div>
+                <span class="ach-points">+${a.Points || 0}</span>
+            </li>`;
+        }
+        html += `</ul>`;
+    }
+    html += `</div>`;
+
+    root.innerHTML = html;
+
+    // Draw chart
+    const ctx = document.getElementById('daily-chart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.daily.map(d => d.date.slice(5)),
+            datasets: [
+                {
+                    label: 'Achievements',
+                    data: data.daily.map(d => d.count),
+                    backgroundColor: '#2E5B8A',
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Points',
+                    data: data.daily.map(d => d.points),
+                    backgroundColor: '#d4a017',
+                    yAxisID: 'y1',
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Achievements' }, position: 'left' },
+                y1: { beginAtZero: true, title: { display: true, text: 'Points' }, position: 'right', grid: { drawOnChartArea: false } },
+            },
+        },
+    });
+}
+
+document.getElementById('days-select').addEventListener('change', loadWeekly);
+document.getElementById('refresh-btn').addEventListener('click', loadWeekly);
+loadWeekly();
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Hunt Tracker · RA Companion{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Achievement Hunt Tracker</h2>
+    <p style="color:var(--text-muted);margin-top:-0.5rem;">Pick a game you're working on to see remaining achievements sorted by unlock rarity (easiest first).</p>
+    <div class="controls">
+        <input type="text" id="search-input" placeholder="Search your played games…" style="flex:1;min-width:220px;">
+        <button id="search-btn">Search</button>
+    </div>
+    <div id="search-results"></div>
+</div>
+<div id="hunt-root"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function searchGames() {
+    const q = document.getElementById('search-input').value.trim();
+    const box = document.getElementById('search-results');
+    if (!q) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="loading">Searching…</div>';
+    try {
+        const r = await fetch(`/api/search-game?q=${encodeURIComponent(q)}`);
+        const data = await r.json();
+        if (!data.results.length) {
+            box.innerHTML = '<div class="empty">No matches in your played games.</div>';
+            return;
+        }
+        let html = '<div class="game-list" style="margin-top:0.75rem;">';
+        for (const g of data.results) {
+            const icon = g.icon ? `https://retroachievements.org${g.icon}` : '';
+            html += `<div class="game-card" data-game-id="${g.game_id}">
+                ${icon ? `<img src="${icon}" alt="">` : ''}
+                <div class="meta">
+                    <div class="title">${g.title}</div>
+                    <div class="console">${g.console}</div>
+                </div>
+            </div>`;
+        }
+        html += '</div>';
+        box.innerHTML = html;
+        box.querySelectorAll('.game-card').forEach(el => {
+            el.addEventListener('click', () => loadHunt(el.dataset.gameId));
+        });
+    } catch (e) {
+        box.innerHTML = `<div class="error">Search failed: ${e.message}</div>`;
+    }
+}
+
+async function loadHunt(gameId) {
+    const root = document.getElementById('hunt-root');
+    root.innerHTML = '<div class="loading">Loading achievements…</div>';
+    try {
+        const r = await fetch(`/api/hunt/${gameId}`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        render(root, data);
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+    }
+}
+
+function render(root, data) {
+    const g = data.game;
+    const p = data.progress;
+    const icon = g.icon ? `https://retroachievements.org${g.icon}` : '';
+    let html = '';
+
+    html += `<div class="card">
+        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+            ${icon ? `<img src="${icon}" alt="" style="width:80px;height:80px;border-radius:6px;">` : ''}
+            <div style="flex:1;min-width:200px;">
+                <h2 style="border:none;margin:0;">${g.title}</h2>
+                <div style="color:var(--text-muted);font-size:0.9rem;">${g.console} · ${g.developer || ''} · ${g.released || ''}</div>
+                <div style="margin-top:0.5rem;font-weight:600;">${p.earned} / ${p.total} achievements (${p.percent}%)</div>
+                <div class="progress"><div class="bar" style="width:${p.percent}%;"></div></div>
+            </div>
+        </div>
+    </div>`;
+
+    html += `<div class="card"><h2>Remaining (${data.remaining.length}) — easiest first</h2>`;
+    if (!data.remaining.length) {
+        html += `<div class="empty">All done. Congrats!</div>`;
+    } else {
+        html += `<ul class="unlock-list">`;
+        for (const a of data.remaining) {
+            const badge = a.badge ? `https://media.retroachievements.org/Badge/${a.badge}.png` : '';
+            const rarityClass = a.rarity_pct > 50 ? 'common' : 'rare';
+            html += `<li>
+                ${badge ? `<img src="${badge}" style="opacity:0.55;" alt="">` : ''}
+                <div style="flex:1;min-width:0;">
+                    <div class="ach-title">${a.title} <span class="badge ${rarityClass}">${a.rarity_pct}% unlocked</span></div>
+                    <div class="ach-meta">${a.description || ''}</div>
+                </div>
+                <span class="ach-points">+${a.points}</span>
+            </li>`;
+        }
+        html += `</ul>`;
+    }
+    html += `</div>`;
+
+    if (data.earned.length) {
+        html += `<div class="card"><h2>Earned (${data.earned.length})</h2><ul class="unlock-list">`;
+        for (const a of data.earned) {
+            const badge = a.badge ? `https://media.retroachievements.org/Badge/${a.badge}.png` : '';
+            html += `<li>
+                ${badge ? `<img src="${badge}" alt="">` : ''}
+                <div style="flex:1;min-width:0;">
+                    <div class="ach-title">${a.title}</div>
+                    <div class="ach-meta">${(a.date_earned || '').slice(0,16)}</div>
+                </div>
+                <span class="ach-points">+${a.points}</span>
+            </li>`;
+        }
+        html += `</ul></div>`;
+    }
+
+    root.innerHTML = html;
+}
+
+document.getElementById('search-btn').addEventListener('click', searchGames);
+document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchGames();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Mastery Candidates · RA Companion{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Mastery Candidates</h2>
+    <p style="color:var(--text-muted);margin-top:-0.5rem;">Games you're close to mastering. Sorted by fewest remaining achievements.</p>
+    <div class="controls">
+        <label>Minimum completion:
+            <select id="threshold">
+                <option value="50">50%+</option>
+                <option value="70">70%+</option>
+                <option value="80" selected>80%+</option>
+                <option value="90">90%+</option>
+                <option value="95">95%+</option>
+            </select>
+        </label>
+        <button id="refresh">Refresh</button>
+    </div>
+</div>
+<div id="mastery-root"><div class="loading">Loading…</div></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadMastery() {
+    const root = document.getElementById('mastery-root');
+    root.innerHTML = '<div class="loading">Loading…</div>';
+    const threshold = document.getElementById('threshold').value;
+    try {
+        const r = await fetch(`/api/mastery?threshold=${threshold}`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        render(root, data);
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+    }
+}
+
+function render(root, data) {
+    if (!data.count) {
+        root.innerHTML = `<div class="card"><div class="empty">No candidates at ${data.threshold}%+ completion.</div></div>`;
+        return;
+    }
+    let html = `<div class="card"><h2>${data.count} game${data.count === 1 ? '' : 's'} within reach</h2>`;
+    html += `<table><thead><tr>
+        <th></th><th>Game</th><th>Console</th><th>Progress (HC)</th><th>Softcore</th><th>Remaining</th><th>Last Played</th>
+    </tr></thead><tbody>`;
+
+    for (const c of data.candidates) {
+        const icon = c.icon ? `https://retroachievements.org${c.icon}` : '';
+        html += `<tr>
+            <td>${icon ? `<img src="${icon}" alt="" style="width:40px;height:40px;border-radius:4px;">` : ''}</td>
+            <td><strong><a href="/hunt" onclick="sessionStorage.setItem('hunt_game_id', '${c.game_id}');">${c.title}</a></strong></td>
+            <td>${c.console}</td>
+            <td>
+                ${c.pct_hard}%<div class="progress"><div class="bar hardcore" style="width:${c.pct_hard}%;"></div></div>
+            </td>
+            <td>
+                ${c.pct_soft}%<div class="progress"><div class="bar" style="width:${c.pct_soft}%;"></div></div>
+            </td>
+            <td><strong>${c.remaining}</strong> / ${c.total_achievements}</td>
+            <td>${(c.most_recent || '').slice(0,10)}</td>
+        </tr>`;
+    }
+
+    html += `</tbody></table></div>`;
+    root.innerHTML = html;
+}
+
+document.getElementById('threshold').addEventListener('change', loadMastery);
+document.getElementById('refresh').addEventListener('click', loadMastery);
+loadMastery();
+</script>
+{% endblock %}

@@ -1,0 +1,349 @@
+:root {
+    --navy: #243F72;
+    --navy-dark: #1a2e54;
+    --steel: #2E5B8A;
+    --steel-light: #4a7bb0;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --border: #dde3ec;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --accent: #d4a017;
+    --success: #2f855a;
+    --warn: #c05621;
+    --danger: #b01c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+/* ---------- Header ---------- */
+.site-header {
+    background: var(--navy);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.user-tag {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: #b8c5dc;
+    margin-top: 0.15rem;
+}
+
+.site-nav {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.site-nav a {
+    color: #d5dcec;
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.92rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.site-nav a:hover { background: var(--steel); color: #fff; }
+.site-nav a.active { background: var(--steel); color: #fff; font-weight: 500; }
+
+/* ---------- Layout ---------- */
+.site-main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+.site-footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    background: #fff;
+}
+
+/* ---------- Cards ---------- */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.card h2 {
+    margin: 0 0 1rem;
+    color: var(--navy);
+    font-size: 1.15rem;
+    border-bottom: 2px solid var(--steel);
+    padding-bottom: 0.5rem;
+}
+
+.card h3 {
+    margin: 0 0 0.75rem;
+    color: var(--steel);
+    font-size: 1rem;
+}
+
+/* ---------- Stat tiles ---------- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.stat {
+    background: linear-gradient(135deg, var(--navy), var(--steel));
+    color: #fff;
+    padding: 1rem 1.1rem;
+    border-radius: 6px;
+    text-align: left;
+}
+
+.stat .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+    margin-bottom: 0.3rem;
+}
+
+.stat .value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat .sub {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    margin-top: 0.2rem;
+}
+
+/* ---------- Controls ---------- */
+.controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.controls label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+input[type="text"], input[type="number"], select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background: #fff;
+    color: var(--text);
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: none;
+    border-color: var(--steel);
+    box-shadow: 0 0 0 3px rgba(46, 91, 138, 0.15);
+}
+
+button {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.1rem;
+    border-radius: 4px;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+button:hover { background: var(--steel); }
+button:disabled { background: #9aa4b6; cursor: not-allowed; }
+
+/* ---------- Lists ---------- */
+.game-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+}
+
+.game-card {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #fafbfd;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.game-card:hover { border-color: var(--steel); transform: translateY(-1px); }
+
+.game-card img {
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    background: #ddd;
+}
+
+.game-card .meta { flex: 1; min-width: 0; }
+.game-card .title {
+    font-weight: 600;
+    color: var(--navy);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.game-card .console { font-size: 0.8rem; color: var(--text-muted); }
+.game-card .stats { font-size: 0.8rem; color: var(--text); margin-top: 0.25rem; }
+
+.unlock-list { list-style: none; padding: 0; margin: 0; }
+.unlock-list li {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+}
+.unlock-list li:last-child { border-bottom: none; }
+.unlock-list img { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+.unlock-list .ach-title { font-weight: 600; color: var(--navy); }
+.unlock-list .ach-meta { font-size: 0.8rem; color: var(--text-muted); }
+.unlock-list .ach-points {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ---------- Progress bar ---------- */
+.progress {
+    width: 100%;
+    height: 10px;
+    background: #e6ebf2;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 0.3rem;
+}
+.progress .bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--steel), var(--navy));
+    transition: width 0.3s;
+}
+.progress .bar.hardcore { background: linear-gradient(90deg, var(--accent), #b8851a); }
+
+/* ---------- Pick card (play tonight) ---------- */
+.pick-card {
+    background: linear-gradient(135deg, var(--navy), var(--steel));
+    color: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+.pick-card img { width: 96px; height: 96px; border-radius: 6px; flex-shrink: 0; }
+.pick-card .pick-meta { flex: 1; }
+.pick-card h3 { margin: 0 0 0.25rem; font-size: 1.5rem; color: #fff; }
+.pick-card .sub { opacity: 0.85; }
+
+/* ---------- Loading / empty ---------- */
+.loading, .empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.error {
+    color: var(--danger);
+    background: #fee;
+    border: 1px solid #fcc;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.badge.rare { background: #fde68a; color: #92400e; }
+.badge.common { background: #dbeafe; color: #1e40af; }
+.badge.hardcore { background: var(--accent); color: #fff; }
+
+/* ---------- Tables ---------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+th {
+    background: #f0f3f8;
+    color: var(--navy);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+tr:hover { background: #f9fafc; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 640px) {
+    .header-inner { padding: 0.75rem 1rem; }
+    .site-main { padding: 1rem; }
+    .brand h1 { font-size: 1.1rem; }
+    .pick-card { flex-direction: column; text-align: center; }
+    .stat .value { font-size: 1.3rem; }
+}

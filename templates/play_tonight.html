@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Play Tonight · RA Companion{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>What Should I Play Tonight?</h2>
+    <p style="color:var(--text-muted);margin-top:-0.5rem;">Picks a game from your Want to Play list that fits your available time.</p>
+    <div class="controls">
+        <label>Time available (min):
+            <input type="number" id="minutes-input" value="60" min="10" max="600" step="10">
+        </label>
+        <label>
+            <input type="checkbox" id="exclude-started" checked> Exclude already-started
+        </label>
+        <button id="pick-btn">Pick for me</button>
+    </div>
+</div>
+<div id="pick-root"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function pickGame() {
+    const root = document.getElementById('pick-root');
+    root.innerHTML = '<div class="loading">Rolling the dice…</div>';
+    const minutes = document.getElementById('minutes-input').value;
+    const exclude = document.getElementById('exclude-started').checked;
+    try {
+        const r = await fetch(`/api/play-tonight?minutes=${minutes}&exclude_started=${exclude}`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        render(root, data);
+    } catch (e) {
+        root.innerHTML = `<div class="error">Failed to load: ${e.message}</div>`;
+    }
+}
+
+function render(root, data) {
+    if (!data.pick) {
+        root.innerHTML = `<div class="card"><div class="empty">No candidates found. Try adding games to your Want to Play list on retroachievements.org, or widen your time window.</div></div>`;
+        return;
+    }
+    const p = data.pick;
+    const icon = p.icon ? `https://retroachievements.org${p.icon}` : '';
+
+    let html = `<div class="pick-card">
+        ${icon ? `<img src="${icon}" alt="">` : ''}
+        <div class="pick-meta">
+            <div class="sub" style="text-transform:uppercase;letter-spacing:0.05em;font-size:0.75rem;opacity:0.8;">Tonight's pick</div>
+            <h3>${p.title}</h3>
+            <div class="sub">${p.console}</div>
+            <div style="margin-top:0.75rem;font-size:0.92rem;">
+                ${p.achievements} achievements · ${p.points} points · ~${p.est_minutes} min estimated
+            </div>
+        </div>
+    </div>`;
+
+    html += `<div class="card" style="margin-top:1.25rem;">
+        <h3>Stats</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">
+            ${data.fitting_candidates} of ${data.total_candidates} Want-to-Play games fit your window of ${data.minutes_available} minutes.
+        </p>
+    </div>`;
+
+    if (data.alternatives && data.alternatives.length > 0) {
+        html += `<div class="card"><h3>Alternatives</h3><div class="game-list">`;
+        for (const a of data.alternatives) {
+            const ai = a.icon ? `https://retroachievements.org${a.icon}` : '';
+            html += `<div class="game-card">
+                ${ai ? `<img src="${ai}" alt="">` : ''}
+                <div class="meta">
+                    <div class="title" title="${a.title}">${a.title}</div>
+                    <div class="console">${a.console}</div>
+                    <div class="stats">${a.achievements} ach · ${a.points} pts · ~${a.est_minutes}m</div>
+                </div>
+            </div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    root.innerHTML = html;
+}
+
+document.getElementById('pick-btn').addEventListener('click', pickGame);
+pickGame();
+</script>
+{% endblock %}
