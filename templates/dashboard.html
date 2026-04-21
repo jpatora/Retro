@@ -31,14 +31,20 @@ function renderDashboard(root, data) {
 
     let html = '';
 
-    // Profile header
-    html += `<div class="card">
-        <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;">
-            ${avatar ? `<img src="${avatar}" alt="avatar" style="width:80px;height:80px;border-radius:6px;">` : ''}
-            <div>
-                <h2 style="border:none;margin:0;">${p.User || ''} ${p.Motto ? `<span style="font-size:0.85rem;color:var(--text-muted);font-weight:normal;">— "${p.Motto}"</span>` : ''}</h2>
-                <div style="color:var(--text-muted);font-size:0.9rem;">${p.RichPresenceMsg || 'Not currently playing'}</div>
+    // Profile header + companion photo
+    html += `<div class="profile-row">
+        <div class="card profile-card">
+            <div style="display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap;">
+                ${avatar ? `<img src="${avatar}" alt="avatar" style="width:80px;height:80px;border-radius:6px;">` : ''}
+                <div>
+                    <h2 style="border:none;margin:0;">${p.User || ''} ${p.Motto ? `<span style="font-size:0.85rem;color:var(--text-muted);font-weight:normal;">— "${p.Motto}"</span>` : ''}</h2>
+                    <div style="color:var(--text-muted);font-size:0.9rem;">${p.RichPresenceMsg || 'Not currently playing'}</div>
+                </div>
             </div>
+        </div>
+        <div class="card companion-card">
+            <img src="/static/images/axolotl.jpeg" alt="Axolotl companion" class="companion-img">
+            <div class="companion-caption">Gaming buddy</div>
         </div>
     </div>`;
 

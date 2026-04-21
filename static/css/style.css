@@ -90,6 +90,60 @@ body {
     background: #fff;
 }
 
+/* ---------- Profile row layout (dashboard) ---------- */
+.profile-row {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 1.25rem;
+    align-items: stretch;
+    margin-bottom: 1.25rem;
+}
+
+.profile-row .card {
+    margin-bottom: 0;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+}
+
+.companion-card {
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    min-height: 140px;
+}
+
+.companion-img {
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+    object-fit: cover;
+    display: block;
+}
+
+.companion-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.4rem 0.75rem;
+    background: linear-gradient(to top, rgba(36,63,114,0.9), rgba(36,63,114,0));
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-align: right;
+}
+
+@media (max-width: 720px) {
+    .profile-row {
+        grid-template-columns: 1fr;
+    }
+    .companion-card { min-height: 180px; }
+}
+
 /* ---------- Cards ---------- */
 .card {
     background: var(--card);
