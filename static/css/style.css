@@ -242,6 +242,8 @@ button:disabled { background: #9aa4b6; cursor: not-allowed; }
     align-items: center;
 }
 .unlock-list li:last-child { border-bottom: none; }
+.unlock-list li.clickable { cursor: pointer; border-radius: 4px; transition: background 0.12s; }
+.unlock-list li.clickable:hover { background: #f0f4fa; padding-left: 0.5rem; padding-right: 0.5rem; margin-left: -0.5rem; margin-right: -0.5rem; }
 .unlock-list img { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
 .unlock-list .ach-title { font-weight: 600; color: var(--navy); }
 .unlock-list .ach-meta { font-size: 0.8rem; color: var(--text-muted); }
@@ -338,6 +340,8 @@ th {
     letter-spacing: 0.03em;
 }
 tr:hover { background: #f9fafc; }
+tr.clickable-row { cursor: pointer; }
+tr.clickable-row:hover { background: #eef3fa; }
 
 /* ---------- Mobile ---------- */
 @media (max-width: 640px) {

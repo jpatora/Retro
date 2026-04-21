@@ -59,7 +59,7 @@ function renderWeekly(root, data) {
         html += `<div class="game-list">`;
         for (const g of data.top_games) {
             const icon = g.game_icon ? `https://retroachievements.org${g.game_icon}` : '';
-            html += `<div class="game-card">
+            html += `<div class="game-card" data-game-id="${g.game_id}">
                 ${icon ? `<img src="${icon}" alt="">` : ''}
                 <div class="meta">
                     <div class="title" title="${g.game_title}">${g.game_title}</div>
@@ -79,7 +79,8 @@ function renderWeekly(root, data) {
         html += `<ul class="unlock-list">`;
         for (const a of data.achievements) {
             const badge = a.BadgeURL || (a.BadgeName ? `https://media.retroachievements.org/Badge/${a.BadgeName}.png` : '');
-            html += `<li>
+            const gid = a.GameID || '';
+            html += `<li ${gid ? `class="clickable" data-game-id="${gid}"` : ''}>
                 ${badge ? `<img src="${badge}" alt="">` : ''}
                 <div style="flex:1;min-width:0;">
                     <div class="ach-title">${a.Title || ''}</div>
@@ -93,6 +94,7 @@ function renderWeekly(root, data) {
     html += `</div>`;
 
     root.innerHTML = html;
+    wireGameLinks(root);
 
     // Draw chart
     const ctx = document.getElementById('daily-chart').getContext('2d');

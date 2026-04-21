@@ -127,5 +127,18 @@ document.getElementById('search-btn').addEventListener('click', searchGames);
 document.getElementById('search-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') searchGames();
 });
+
+// Deep-link support: if the URL has ?game_id=NNN, load that game directly.
+(function autoloadFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const gid = params.get('game_id');
+    if (gid) {
+        loadHunt(gid);
+        // Scroll the hunt view into focus after load.
+        setTimeout(() => {
+            document.getElementById('hunt-root').scrollIntoView({behavior: 'smooth', block: 'start'});
+        }, 400);
+    }
+})();
 </script>
 {% endblock %}

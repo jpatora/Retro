@@ -61,7 +61,8 @@ function renderDashboard(root, data) {
         html += `<ul class="unlock-list">`;
         for (const a of data.recent_unlocks) {
             const badge = a.BadgeURL || (a.BadgeName ? `https://media.retroachievements.org/Badge/${a.BadgeName}.png` : '');
-            html += `<li>
+            const gid = a.GameID || '';
+            html += `<li ${gid ? `class="clickable" data-game-id="${gid}"` : ''}>
                 ${badge ? `<img src="${badge}" alt="badge">` : ''}
                 <div style="flex:1;min-width:0;">
                     <div class="ach-title">${a.Title || ''}</div>
@@ -83,7 +84,8 @@ function renderDashboard(root, data) {
         html += `<div class="game-list">`;
         for (const m of data.mastered) {
             const icon = m.ImageIcon ? `https://retroachievements.org${m.ImageIcon}` : '';
-            html += `<div class="game-card">
+            const gid = m.AwardData || m.GameID || '';
+            html += `<div class="game-card" ${gid ? `data-game-id="${gid}"` : ''}>
                 ${icon ? `<img src="${icon}" alt="">` : ''}
                 <div class="meta">
                     <div class="title" title="${m.Title || ''}">${m.Title || 'Unknown'}</div>
@@ -97,6 +99,7 @@ function renderDashboard(root, data) {
     html += `</div>`;
 
     root.innerHTML = html;
+    wireGameLinks(root);
 }
 
 loadDashboard();

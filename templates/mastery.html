@@ -52,9 +52,9 @@ function render(root, data) {
 
     for (const c of data.candidates) {
         const icon = c.icon ? `https://retroachievements.org${c.icon}` : '';
-        html += `<tr>
+        html += `<tr class="clickable-row" data-game-id="${c.game_id}">
             <td>${icon ? `<img src="${icon}" alt="" style="width:40px;height:40px;border-radius:4px;">` : ''}</td>
-            <td><strong><a href="/hunt" onclick="sessionStorage.setItem('hunt_game_id', '${c.game_id}');">${c.title}</a></strong></td>
+            <td><strong>${c.title}</strong></td>
             <td>${c.console}</td>
             <td>
                 ${c.pct_hard}%<div class="progress"><div class="bar hardcore" style="width:${c.pct_hard}%;"></div></div>
@@ -69,6 +69,7 @@ function render(root, data) {
 
     html += `</tbody></table></div>`;
     root.innerHTML = html;
+    wireGameLinks(root);
 }
 
 document.getElementById('threshold').addEventListener('change', loadMastery);

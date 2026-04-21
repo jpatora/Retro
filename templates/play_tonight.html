@@ -46,7 +46,7 @@ function render(root, data) {
     const p = data.pick;
     const icon = p.icon ? `https://retroachievements.org${p.icon}` : '';
 
-    let html = `<div class="pick-card">
+    let html = `<div class="pick-card" data-game-id="${p.game_id}">
         ${icon ? `<img src="${icon}" alt="">` : ''}
         <div class="pick-meta">
             <div class="sub" style="text-transform:uppercase;letter-spacing:0.05em;font-size:0.75rem;opacity:0.8;">Tonight's pick</div>
@@ -55,6 +55,7 @@ function render(root, data) {
             <div style="margin-top:0.75rem;font-size:0.92rem;">
                 ${p.achievements} achievements · ${p.points} points · ~${p.est_minutes} min estimated
             </div>
+            <div class="sub" style="margin-top:0.5rem;font-size:0.8rem;opacity:0.85;">Click to see achievements →</div>
         </div>
     </div>`;
 
@@ -69,7 +70,7 @@ function render(root, data) {
         html += `<div class="card"><h3>Alternatives</h3><div class="game-list">`;
         for (const a of data.alternatives) {
             const ai = a.icon ? `https://retroachievements.org${a.icon}` : '';
-            html += `<div class="game-card">
+            html += `<div class="game-card" data-game-id="${a.game_id}">
                 ${ai ? `<img src="${ai}" alt="">` : ''}
                 <div class="meta">
                     <div class="title" title="${a.title}">${a.title}</div>
@@ -82,6 +83,7 @@ function render(root, data) {
     }
 
     root.innerHTML = html;
+    wireGameLinks(root);
 }
 
 document.getElementById('pick-btn').addEventListener('click', pickGame);
