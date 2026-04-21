@@ -239,6 +239,30 @@ body {
     opacity: 0.75;
 }
 
+/* Clickable stat tiles (rendered as <a>) */
+a.stat.clickable-stat {
+    text-decoration: none;
+    display: block;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    position: relative;
+}
+a.stat.clickable-stat:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 4px 12px rgba(36, 63, 114, 0.25);
+}
+a.stat.clickable-stat:hover::after {
+    content: '→';
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    font-size: 1rem;
+    opacity: 0.6;
+}
+a.stat.primary.clickable-stat:hover {
+    box-shadow: 0 4px 14px rgba(212, 160, 23, 0.45);
+}
+
 .stat .label {
     font-size: 0.75rem;
     text-transform: uppercase;

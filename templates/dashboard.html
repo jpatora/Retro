@@ -78,11 +78,20 @@ function renderDashboard(root, data) {
     const masteryLabel = softcore ? 'Completions' : 'Masteries';
 
     html += `<div class="stat-grid">
-        <div class="stat primary"><div class="label">${primaryPointsLabel}</div><div class="value">${primaryPointsValue.toLocaleString()}</div></div>
+        <a class="stat primary clickable-stat" href="/weekly" title="See where these points came from">
+            <div class="label">${primaryPointsLabel}</div>
+            <div class="value">${primaryPointsValue.toLocaleString()}</div>
+        </a>
         ${rpTile}
         ${rankTile}
-        <div class="stat"><div class="label">${masteryLabel}</div><div class="value">${masteryValue}</div></div>
-        <div class="stat"><div class="label">${beatenLabel}</div><div class="value">${beatenCount}</div></div>
+        <a class="stat clickable-stat" href="/mastery" title="View games close to completion">
+            <div class="label">${masteryLabel}</div>
+            <div class="value">${masteryValue}</div>
+        </a>
+        <a class="stat clickable-stat" href="#beaten-section" title="View your beaten games">
+            <div class="label">${beatenLabel}</div>
+            <div class="value">${beatenCount}</div>
+        </a>
     </div>`;
 
     // Recent unlocks
@@ -109,7 +118,7 @@ function renderDashboard(root, data) {
     html += `</div>`;
 
     // Beaten games
-    html += `<div class="card">
+    html += `<div class="card" id="beaten-section">
         <h2>Recently Beaten</h2>`;
     if (!data.beaten || data.beaten.length === 0) {
         html += `<div class="empty">No beaten games to show.</div>`;
