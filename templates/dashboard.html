@@ -52,18 +52,40 @@ function renderDashboard(root, data) {
 
     // Stat tiles — primary Points tile swaps based on active mode
     const softcore = isSoftcore();
+    const rank = data.rank;
+    const totalRanked = data.total_ranked;
+
     const primaryPointsLabel = softcore ? 'Points (SC)' : 'Points (HC)';
     const primaryPointsValue = softcore ? (p.TotalSoftcorePoints || 0) : (p.TotalPoints || 0);
     const secondaryPointsLabel = softcore ? 'Hardcore Points' : 'Softcore Points';
     const secondaryPointsValue = softcore ? (p.TotalPoints || 0) : (p.TotalSoftcorePoints || 0);
 
+    // RetroPoints are only awarded on hardcore unlocks.
+    const rpValue = (p.TotalTruePoints || 0);
+    const rpTile = softcore
+        ? `<div class="stat secondary"><div class="label">RetroPoints</div><div class="value">${rpValue.toLocaleString()}</div><div class="sub">Hardcore only</div></div>`
+        : `<div class="stat"><div class="label">RetroPoints</div><div class="value">${rpValue.toLocaleString()}</div></div>`;
+
+    // Rank is also hardcore-only on RA. For softcore players it won't be shown.
+    const rankTile = softcore
+        ? `<div class="stat secondary"><div class="label">Rank (HC)</div><div class="value">${rank ? '#' + rank.toLocaleString() : '—'}</div><div class="sub">Hardcore only</div></div>`
+        : `<div class="stat"><div class="label">Rank</div><div class="value">${rank ? '#' + rank.toLocaleString() : '—'}</div>${totalRanked ? `<div class="sub">of ${totalRanked.toLocaleString()}</div>` : ''}</div>`;
+
+    // Beaten count: show the count matching the active mode
+    const beatenCount = softcore ? (aw.beaten_softcore_count || 0) : (aw.beaten_hardcore_count || 0);
+    const beatenLabel = softcore ? 'Beaten (SC)' : 'Beaten (HC)';
+
+    // Mastery count is hardcore-only; Completion is the softcore equivalent
+    const masteryValue = softcore ? (aw.completion_count || 0) : (aw.mastery_count || 0);
+    const masteryLabel = softcore ? 'Completions' : 'Masteries';
+
     html += `<div class="stat-grid">
         <div class="stat primary"><div class="label">${primaryPointsLabel}</div><div class="value">${primaryPointsValue.toLocaleString()}</div></div>
         <div class="stat secondary"><div class="label">${secondaryPointsLabel}</div><div class="value">${secondaryPointsValue.toLocaleString()}</div></div>
-        <div class="stat"><div class="label">RetroPoints</div><div class="value">${(p.TotalTruePoints || 0).toLocaleString()}</div></div>
-        <div class="stat"><div class="label">Rank</div><div class="value">#${(p.Rank || '—').toLocaleString()}</div></div>
-        <div class="stat"><div class="label">Masteries</div><div class="value">${aw.mastery_count || 0}</div></div>
-        <div class="stat"><div class="label">Games Beaten</div><div class="value">${aw.beaten_count || 0}</div></div>
+        ${rpTile}
+        ${rankTile}
+        <div class="stat"><div class="label">${masteryLabel}</div><div class="value">${masteryValue}</div></div>
+        <div class="stat"><div class="label">${beatenLabel}</div><div class="value">${beatenCount}</div></div>
     </div>`;
 
     // Recent unlocks

@@ -125,13 +125,25 @@ def api_dashboard():
         if award.get("AwardType") in ("Mastery/Completion", "Game Beaten"):
             mastered.append(award)
 
+    awards_data = awards or {}
+    summary_data = summary or {}
+
+    # Summary endpoint sometimes includes Rank / TotalRanked; profile endpoint
+    # never does. We'll prefer whichever is present.
+    rank = summary_data.get("Rank") or profile.get("Rank")
+    total_ranked = summary_data.get("TotalRanked") or profile.get("TotalRanked")
+
     return jsonify({
         "profile": profile,
         "summary": summary,
+        "rank": rank,
+        "total_ranked": total_ranked,
         "awards_summary": {
-            "total_awards": (awards or {}).get("TotalAwardsCount", 0),
-            "mastery_count": (awards or {}).get("MasteryAwardsCount", 0),
-            "beaten_count": (awards or {}).get("BeatenHardcoreAwardsCount", 0),
+            "total_awards": awards_data.get("TotalAwardsCount", 0),
+            "mastery_count": awards_data.get("MasteryAwardsCount", 0),
+            "completion_count": awards_data.get("CompletionAwardsCount", 0),
+            "beaten_hardcore_count": awards_data.get("BeatenHardcoreAwardsCount", 0),
+            "beaten_softcore_count": awards_data.get("BeatenSoftcoreAwardsCount", 0),
         },
         "mastered": mastered[:24],
         "recent_unlocks": recent[:20],
