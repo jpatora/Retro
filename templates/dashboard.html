@@ -57,8 +57,6 @@ function renderDashboard(root, data) {
 
     const primaryPointsLabel = softcore ? 'Points (SC)' : 'Points (HC)';
     const primaryPointsValue = softcore ? (p.TotalSoftcorePoints || 0) : (p.TotalPoints || 0);
-    const secondaryPointsLabel = softcore ? 'Hardcore Points' : 'Softcore Points';
-    const secondaryPointsValue = softcore ? (p.TotalPoints || 0) : (p.TotalSoftcorePoints || 0);
 
     // RetroPoints are only awarded on hardcore unlocks.
     const rpValue = (p.TotalTruePoints || 0);
@@ -81,7 +79,6 @@ function renderDashboard(root, data) {
 
     html += `<div class="stat-grid">
         <div class="stat primary"><div class="label">${primaryPointsLabel}</div><div class="value">${primaryPointsValue.toLocaleString()}</div></div>
-        <div class="stat secondary"><div class="label">${secondaryPointsLabel}</div><div class="value">${secondaryPointsValue.toLocaleString()}</div></div>
         ${rpTile}
         ${rankTile}
         <div class="stat"><div class="label">${masteryLabel}</div><div class="value">${masteryValue}</div></div>
